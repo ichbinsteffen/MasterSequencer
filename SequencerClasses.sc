@@ -321,11 +321,14 @@ SCSynthElement {
 			"[instrument:" ++ this.id ++
 			",degree: " ++ this.scCodeBox_pat ++
 			",amp: 0.4," ++ "]"
-		).interpret
-
+		).interpret;
 	}
 
-
+	refresh {    // REFRESHING THE INSPECTOR TEXT FOR THE ACTUAL scSynthelement
+		var inspectorString =
+		"*** INSPECTOR ***\n\n A scSynthElement";
+		MasterSequencer.instance.inspectorTextPrint(inspectorString);
+	}
 }
 
 /*
