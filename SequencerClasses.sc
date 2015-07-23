@@ -227,6 +227,10 @@ SequencerElement {
 
 	}
 
+	setSetting { |popVal, vol, pan, rate|
+		this.popUp.value = popVal;
+	}
+
 
 }
 
@@ -235,6 +239,7 @@ SCSynthElement {
 	var <>mainView,<>selectorView,<>view,<>scCodeBox_syn,<>scCodeBox_pat;
 	var <>slider1, <>slider2, <>specAmp, <>pan;
 	var <>id;
+	var <>melo;
 	classvar currentID;
 
 	*initClass {
@@ -292,11 +297,14 @@ SCSynthElement {
 			scCodeBox_syn.string.postln;
 		});
 	*/
-		scCodeBox_syn = QTextView(mainView, Rect(30,20,330,192)).background_(Color.fromHexString("DCDCDC"));
-		scCodeBox_syn.string_("SynthDef { | | \n\t\n\t\n\t Out.ar() \n}".format);
+		scCodeBox_syn = QTextView(
+			mainView,Rect(30,20,330,192))
+		.background_(Color.fromHexString("DCDCDC"));
+
+		scCodeBox_syn.string_("{ | asdf | \n\t\n\t\n\t Out.ar(0, SinOsc.ar) \n }".format);
 
 		scCodeBox_pat = QTextView(mainView, Rect(397,20,386,192)).background_(Color.fromHexString("DCDCDC"));
-		scCodeBox_pat.string_("".format);
+		scCodeBox_pat.string_("Pseq([0,1,2,], inf)".format);
 
 		^this;
 	}
@@ -304,6 +312,19 @@ SCSynthElement {
 	remove {
 		// not implemented yet
 	}
+
+	buildSynth {
+		var s = this.scCodeBox_syn.interpret;
+		SynthDef(this.id, s).add;
+
+		this.melo = (
+			"[instrument:" ++ this.id ++
+			",degree: " ++ this.scCodeBox_pat ++
+			",amp: 0.4," ++ "]"
+		).interpret
+
+	}
+
 
 }
 

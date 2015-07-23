@@ -10,7 +10,7 @@ MasterSequencer{
 
 	var <>window, <>inspectorView, <>playerView, <>playerSelectorView, <>inspectorTextView, <>constructor,
 	<>ampFader,<>bpmFader, <>playButton, <>bpmNumberBox,
-	<>globalAmp, <>globalBPM, <>sequences, <>sequencerElementsLayout,
+	<>globalAmp, <>globalBPM, <>sequences, <>sequencerElementsLayout, <>scSynthElements,
 	<>chosenSoundType, <>bars, <>noteLength, <>sampleArray, <>scroll, <>flowLayout,
 	<>drawing, <>toggling, <>erasing, <>tempoSpec, <>volumeSpec;
 
@@ -67,10 +67,12 @@ MasterSequencer{
 		TempoClock.tempo_(globalBPM/60);
 
 		sequences = ();
-		sequences[8] = List.new;
+		scSynthElements = ();
+		//sequences[8] = List.new;
 		sequences[16] = List.new;
 		sequences[32] = List.new;
-		//sequences[64] = List.new;
+		sequences[64] = List.new;
+		scSynthElements[100] = List.new;
 	}
 
 	makeWindow {
@@ -102,7 +104,7 @@ MasterSequencer{
 		QStaticText(constructor, Rect(523,1,80,30)).string_("Notelength");
 
 		QPopUpMenu(constructor, Rect(470,5,50,20))
-		.items_([16,32])
+		.items_([16,32,64])
 		.action_({|pop| noteLength = pop.items[pop.value]; });
 
 		QPopUpMenu(constructor, Rect(25,5,140,20))
@@ -111,13 +113,15 @@ MasterSequencer{
 			chosenSoundType = pop.items[pop.value];
 		});
 
-		QButton(constructor, Rect(215,5,100,20))
+		QButton(constructor, Rect(215,5,100,20)) // New SCSynth-Button
 		.states_([["SCSynth", Color.black, Color.white]])
 		.action_({
-			this.addNewSequencerElement(SCSynthElement(scroll));
+			var s = SCSynthElement(scroll);
+			this.addNewSequencerElement(s);
+			scSynthElements.add(s);
 		});
 
-		QButton(constructor, Rect(5,5,20,20))  // New sequencerElement-Button
+		QButton(constructor, Rect(5,5,20,20))    // New SequencerElement-Button
 		.states_([["+", Color.black, Color.white]])
 		.action_({
 
@@ -218,7 +222,7 @@ MasterSequencer{
 		.background_(Color.clear);
 
 		playerView = QView.new(window, Rect(10,610,1010,100))
-		.background_(Color.fromHexString("D3D3D3"))//99CCFF
+		.background_(Color.fromHexString("D3D3D3")) //99CCFF
 		.mouseEnterAction_({playerSelectorView.background_(Color.fromHexString("FF7733"))})
 		.mouseLeaveAction_({playerSelectorView.background_(Color.clear)});
 
@@ -228,7 +232,18 @@ MasterSequencer{
 			["∞", Color.white, Color.black],
 		])
 		.action_({|val|
-			if (val.value == 1) { Tdef(\mainSequencerPlayer).play } { Tdef(\mainSequencerPlayer).stop };
+			if (val.value == 1) {
+				Tdef(\mainSequencerPlayer).play;
+
+				scSynthElements.do{|syn|
+					syn.buildSynth;
+					Pbind(*syn.melo).play
+				}
+
+			} {
+				Tdef(\mainSequencerPlayer).stop;
+				scSynthElements.do{|syn| Pbind(*syn).stop;}
+			};
 		});
 
 		bpmFader = QSlider.new(playerView, Rect(100,50,200,40))
@@ -270,10 +285,13 @@ MasterSequencer{
 		Tdef(\mainSequencerPlayer, {
 			inf.do{ |i|
 
-				var current16 = (i/2).floor;
-				var current32 = i;
+				var current16 = (i/4).floor;
+				var current32 = (i/2).floor;
+				var current64 = i;
 
-				sequences[16].do{ |seq|
+				////// 16 ///////// 16 ////////// 16 /////////// 16 ////////////
+
+				sequences[16].do{ |seq|        // LED
 					var bars = seq.matrix.sequence.size / 16;
 					defer{
 						seq.matrix.guiMatrix.flatten.wrapAt(current16).ledLightOn;
@@ -281,7 +299,7 @@ MasterSequencer{
 					};
 				};
 
-				if( i % 2 == 0 ) {
+				if( i % 4 == 0 ) {        // Trigger Sample
 					sequences[16].do{ |seq|
 
 						var arguments = [
@@ -292,7 +310,8 @@ MasterSequencer{
 							\start, seq.start,
 							\end, seq.end,
 						];
-						var synthName = if(seq.sample.numChannels > 1) { \samplePlayerStereo }{ \samplePlayerMono };
+						var synthName = if(seq.sample.numChannels > 1)
+						{ \samplePlayerStereo }{ \samplePlayerMono };
 
 						if( seq.matrix.sequence.wrapAt(current16) ) {
 							Synth(synthName, arguments);
@@ -300,7 +319,50 @@ MasterSequencer{
 					};
 				};
 
-				sequences[32].do{ |seq|
+				////// 32 ///////// 32 //////////32 /////////// 32 ////////////
+
+				sequences[32].do{ |seq| // LED
+					defer{
+						seq.matrix.guiMatrix.flatten.wrapAt(current32).ledLightOn;
+						seq.matrix.guiMatrix.flatten.wrapAt(current32-1).ledLightOff;
+					};
+				};
+
+				if( i % 2 == 0 ) {     // Trigger Sample
+
+					sequences[32].do{ |seq|
+
+						var bars = seq.matrix.sequence.size / 16;
+						var actualBar = 0;
+						var arguments = [
+							\amp, seq.slider1,
+							\rate, seq.slider2,
+							\buffer, seq.sample,
+							\pan, seq.pan.value,
+							\start, seq.start,
+							\end, seq.end,
+						];
+
+						var synthName = if(seq.sample.numChannels > 1)
+						{ \samplePlayerStereo }{ \samplePlayerMono };
+
+						if( seq.matrix.sequence.wrapAt(current32) ) {
+							Synth(synthName, arguments);
+							//Synth(\samplePlayerStereo,
+							//[\amp, seq.slider1, \rate, seq.slider2, \buffer, seq.sample]);
+						};
+					};
+				};
+				////// 64 ///////// 64 ////////// 64 /////////// 64 ////////////
+
+				sequences[64].do{ |seq|   // LED
+					defer{
+						seq.matrix.guiMatrix.flatten.wrapAt(current64).ledLightOn;
+						seq.matrix.guiMatrix.flatten.wrapAt(current64-1).ledLightOff;
+					};
+				};
+
+				sequences[64].do{ |seq|  // Trigger Sample
 
 					var bars = seq.matrix.sequence.size / 16;
 					var actualBar = 0;
@@ -313,23 +375,23 @@ MasterSequencer{
 						\end, seq.end,
 					];
 
-					var synthName = if(seq.sample.numChannels > 1) { \samplePlayerStereo }{ \samplePlayerMono };
+					var synthName = if(seq.sample.numChannels > 1)
+					{\samplePlayerStereo }{ \samplePlayerMono };
 
-					defer{
-						seq.matrix.guiMatrix.flatten.wrapAt(current32).ledLightOn;
-						seq.matrix.guiMatrix.flatten.wrapAt(current32-1).ledLightOff;
-					};
-
-					if( seq.matrix.sequence.wrapAt(current32) ) {
+					if( seq.matrix.sequence.wrapAt(current64) ) {
 						Synth(synthName, arguments);
 						//Synth(\samplePlayerStereo,
 						//[\amp, seq.slider1, \rate, seq.slider2, \buffer, seq.sample]);
 					};
 				};
-				(1/8).wait;
+
+				//////////////////////////////////////////
+
+				(1/16).wait;
 			};
-		});
-	}
+		};
+	);
+}
 
 
 	loadSynths {

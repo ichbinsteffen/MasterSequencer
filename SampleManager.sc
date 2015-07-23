@@ -61,23 +61,3 @@ SampleManager {
 	}
 
 }
-
-
-/*
-
-SampleManager.loadSamokes(this.class.filenameSymbol.asString.dirname +/+ "samples/kicks/*").pathMatch, 'kicks');
-
-// get section (dictionary with keys/samples)
-SampleManager.getSection('kicks').keys
-
-// get sample (get a single sample form a section or root level)
-SampleManager.getSample('EL_Kick001', 'kicks')
-
-// get an array of samples from a section (or root level)
-SampleManager.getSamples(['EL_Kick001', 'EL_Kick002', 'EL_Kick003'], 'kicks')
-
-// load the same files, won't reload the whole buffers, just ignores...
-SampleManager.loadFiles("~/Music/samples/kinski/*.aif".pathMatch, 'Kinski');
-
-*/
-

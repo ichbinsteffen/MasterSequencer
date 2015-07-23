@@ -1,5 +1,5 @@
 /*
-MasterSequencer.instance = nil
+MasterSequencer.instance = nil;
 MasterSequencer();
 */
 
@@ -52,6 +52,7 @@ SequencerMatrix {
 		size = steps.switch(
 			16, { 24 },
 			32, { 12 },
+			64, { 6 },
 		);
 		height = bars.switch(
 			4, { 50 },
@@ -71,6 +72,21 @@ SequencerMatrix {
 			QView.new(view, Rect(20*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
 			QView.new(view, Rect(24*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
 			QView.new(view, Rect(28*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+		};
+		 if (steps == 64) {
+			QView.new(view, Rect(16*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(20*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(24*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(28*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+
+			QView.new(view, Rect(32*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(36*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(40*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(44*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(48*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(52*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(56*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
+			QView.new(view, Rect(60*size,0,size-2,height-12)).background_(Color.fromHexString("00BFFF"));
 		};
 
 		// 2D array for buttons
