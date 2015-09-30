@@ -156,7 +156,7 @@ SequencerMatrix {
 		sequence.do{|val|
 			bars.do {|i|
 				steps.do{|j|
-					if (val == true){
+					if (val == 1){
 						guiMatrix[i][j].background_(Color.red);
 					};
 				};

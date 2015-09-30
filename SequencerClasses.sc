@@ -52,7 +52,7 @@ SequencerElement {
 		{8} {height = 136}
 		{16} {height = 232};
 
-///// THE VIEWS AND BUTTONS AND SLIDERS /////
+///// THE VIEWS AND BUTTONS AND SLIDERS //////////////////////////////////////////////////////////////
 
 		mainView = QView(MasterSequencer.instance.scroll, Point(820, height)).background_(Color.clear);
 
@@ -80,23 +80,26 @@ SequencerElement {
 			sample = aSample;
 			this.samplePath = sample.path;
 			this.samplePath.postln;
+			this.refresh;
 		});
 
 		defaultSamp = SampleManager.getSection(section).keys.asArray.sort.first;
-		sample = SampleManager.getSample(defaultSamp.asSymbol, section); /// LOAD 1st sample per default
+		sample = SampleManager.getSample(defaultSamp.asSymbol, section);  // LOAD 1st sample per default
 
-		QSlider(mainView, Rect(190, 20, 170, 20)).action_{ |v|  // VOL SLIDER (1)
+		QSlider(mainView, Rect(190, 20, 170, 20)).action_{ |v|            // VOL SLIDER (1)
 			slider1 = specAmp.map(v.value);
 			this.refresh;
 		}.valueAction_(specAmp.unmap(1));
 
 
-		QKnob(mainView, Rect(368, 20, 20, 20))                  // PAN KNOB
-		.action_({|v,x,y,m| pan =\pan.asSpec.map(v.value);})
+		QKnob(mainView, Rect(368, 20, 20, 20))                            // PAN KNOB
+		.action_({|v,x,y,m| pan =\pan.asSpec.map(v.value);
+		this.refresh;
+		})
 		.value_(pan = \pan.asSpec.unmap(0))
 		.centered_(true);
 
-		QKnob(mainView, Rect(368, 50, 20, 20)).action_{ |v|  // SPEED KNOB (slider 2)
+		QKnob(mainView, Rect(368, 50, 20, 20)).action_{ |v|               // SPEED KNOB (slider 2)
 			slider2 = specRate.map(v.value);
 			this.refresh;
 		}.valueAction_(specRate.unmap(1));
@@ -109,14 +112,14 @@ SequencerElement {
 			this.refresh;
 		};
 
-		QButton.new(mainView, Rect(30,20,10,50)).action_({      // SAMPLE LISTEN BUTTON
+		QButton.new(mainView, Rect(30,20,10,50)).action_({                // SAMPLE LISTEN BUTTON
 			sample.play;});
 
-		QButton.new(mainView, Rect(795,((height / 2)-7),9,10))  // DELETE SEQUENCER ELEMENT BUTTON
+		QButton.new(mainView, Rect(795,((height / 2)-7),9,10))            // DELETE SEQUENCER ELEMENT BUTTON
 		.states_([["x", Color.white, (Color.clear).alpha_(0.3)]])
 		.action_({this.remove();});
 
-		QButton.new(mainView, Rect(785,((height / 2)+10),15,13))// Bounce to disk Button
+		QButton.new(mainView, Rect(785,((height / 2)+10),15,13))          // Bounce to disk Button
 		.states_([["B", Color.white, (Color.clear).alpha_(0.1)]])
 		.action_({
 			var binarySequence = this.matrix.sequence.collect(_.binaryValue);
@@ -124,7 +127,7 @@ SequencerElement {
 			})
 		.mouseEnterAction_({MasterSequencer.instance.inspectorTextPrint("\n \n Bounce to Disk")};);
 
-		QButton.new(mainView, Rect(785,((height / 2)+30),15,13)) // DUPLICATE BUTTON
+		QButton.new(mainView, Rect(785,((height / 2)+30),15,13))          // DUPLICATE BUTTON
 		.states_([["D", Color.white, (Color.clear).alpha_(0.1)]])
 		.action_({
 			var ms = MasterSequencer.instance;
@@ -144,9 +147,21 @@ SequencerElement {
 
 	refresh {    // REFRESHING THE INSPECTOR TEXT FOR THE ACTUAL SEQUENCER ELEMENT
 		var inspectorString =
-		"*** INSPECTOR ***\n\nVolume: \t% dB\nSpeed: \t%\n".format(
+		"*** INSPECTOR ***\n
+		Sample: % \n
+		Volume: \t% dB\n
+		Speed: \t%\n
+		\n
+		Start: \t% \n
+		End: \t% \n
+		Pan \t% \n
+		".format(
+			popUp.items[popUp.value],
 			slider1.ampdb.round(0.01),
-			slider2.round(0.01)
+			slider2.round(0.01),
+			this.start.round(0.0001),
+			this.end.round(0.0001),
+			this.pan
 		);
 		MasterSequencer.instance.inspectorTextPrint(inspectorString);
 	}
@@ -159,9 +174,11 @@ SequencerElement {
 	bounceSequenceDialogue{ |binarySequence, sampleFormat = "int16"|
 
 		var p;
-		// this.sequenceDuration = (this.steps.switch(16,{1/8},32,{1/16})) / (60 / MasterSequencer.instance.globalBPM) * (this.bars * this.steps);
+
 		[\BPM, MasterSequencer.instance.globalBPM].postln;
 		[\BARS, this.bars].postln;
+
+		// this.sequenceDuration = (this.steps.switch(16,{1/8},32,{1/16})) / (60 / MasterSequencer.instance.globalBPM) * (this.bars * this.steps);
 
 		// this.sequenceDuration = ((60 / MasterSequencer.instance.globalBPM) * 4) * this.bars;
 
@@ -185,6 +202,7 @@ SequencerElement {
 
 		p = p.score.insert(1, [0, ["/b_allocRead", this.id, this.samplePath, 0, -1]]);
 		p.postln;
+
 		Dialog.savePanel({ |path,score|
 			var header = path.basename.split($.);
 			if(header.size == 1){
@@ -208,30 +226,11 @@ SequencerElement {
 		);
 	}
 
-	// duplicateSequencerElement {
-	// 	var ms = MasterSequencer.instance;
-	// 	var se = SequencerElement(ms.scroll, this.steps, this.bars, "Effects");
-	// 	ms.addNewSequencerElement(se);
-	// }
-
-	copySequence { |seq|
-
-	}
-
-
-	samplePlayingSequencerElement {
-
-	}
-
-	scCodeSequencerElement {
-
-	}
-
 	setSetting { |popVal, vol, pan, rate|
 		this.popUp.value = popVal;
+		this.pan = pan;
+		this.rate = rate;
 	}
-
-
 }
 
 SCSynthElement {
@@ -240,6 +239,7 @@ SCSynthElement {
 	var <>slider1, <>slider2, <>specAmp, <>pan;
 	var <>id;
 	var <>melo;
+	var <>steps;
 	classvar currentID;
 
 	*initClass {
@@ -254,6 +254,7 @@ SCSynthElement {
 	init{|parent|
 
 		this.id = currentID;
+		this.steps = 100;
 		specAmp = ControlSpec(0.0001, 2, \db, 0, 1, "dB");
 
 		mainView = QView(parent, Point(820, 232)).background_(Color.clear);
@@ -273,7 +274,7 @@ SCSynthElement {
 			this.selectorView.background_(Color.clear);
 			MasterSequencer.instance.currentElement = nil;
 		});
-
+/*
 		QSlider(mainView, Rect(368, 50, 20, 162)).action_{ |v|  // VOL SLIDER (1)
 			slider1 = specAmp.map(v.value);
 			//this.refresh;
@@ -283,44 +284,39 @@ SCSynthElement {
 		.action_({|v,x,y,m| pan =\pan.asSpec.map(v.value);})
 		.value_(pan = \pan.asSpec.unmap(0))
 		.centered_(true);
-
+*/
 		QButton.new(mainView, Rect(795,((232 / 2)-7),9,10))  // DELETE SEQUENCER ELEMENT BUTTON
 		.states_([["x", Color.white, (Color.clear).alpha_(0.3)]])
 		.action_({
 			this.remove();
 		};);
 
-	/*
-		QButton(mainView, Rect(30,20,150,50))
-		.states_([["Evaluate", Color.white, Color.black]])
-		.action_({
-			scCodeBox_syn.string.postln;
-		});
-	*/
 		scCodeBox_syn = QTextView(
 			mainView,Rect(30,20,330,192))
 		.background_(Color.fromHexString("DCDCDC"));
 
-		scCodeBox_syn.string_("{ | asdf | \n\t\n\t\n\t Out.ar(0, SinOsc.ar) \n }".format);
+		scCodeBox_syn.string_("{ | asdf | Out.ar(0, SinOsc.ar) }");
 
 		scCodeBox_pat = QTextView(mainView, Rect(397,20,386,192)).background_(Color.fromHexString("DCDCDC"));
-		scCodeBox_pat.string_("Pseq([0,1,2,], inf)".format);
+		scCodeBox_pat.string_("Pseq([0,1,2,0], inf)");
 
 		^this;
 	}
 
 	remove {
-		// not implemented yet
+		"Removing local scSynth element".postln;
+		MasterSequencer.instance.removeSequencerElement(steps, this);
 	}
 
 	buildSynth {
-		var s = this.scCodeBox_syn.interpret;
-		SynthDef(this.id, s).add;
+		var s = (this.scCodeBox_syn.asString).interpret;
+		SynthDef(this.id.asSymbol, s).add;
 
-		this.melo = (
-			"[instrument:" ++ this.id ++
-			",degree: " ++ this.scCodeBox_pat ++
-			",amp: 0.4," ++ "]"
+		this.melo =
+		("[instrument:\\"++
+			this.id.asString ++",degree: "++
+			this.scCodeBox_pat ++
+			",amp: 0.1," ++ "]"
 		).interpret;
 	}
 

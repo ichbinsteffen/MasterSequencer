@@ -3,7 +3,6 @@ MasterSequencer.instance = nil;
 MasterSequencer();
 */
 
-
 MasterSequencer{
 
 	classvar <>instance;
@@ -35,9 +34,15 @@ MasterSequencer{
 	duplicateSequencerElement { |ele|
 		var element = SequencerElement(scroll, ele.steps, ele.bars, ele.section);
 		// hier matrix duplizieren, etc...
-		ele.sequence = element.sequence;
-		ele.slider1 = element.slider1; // sliders states kopieren
-		ele.popUp.value = element.popUp.value;
+		element.matrix.sequence = ele.matrix.sequence;
+		element.slider1 = ele.slider1; // sliders states kopieren
+		element.slider2 = ele.slider2;
+		element.popUp.value = ele.popUp.value;
+		element.start = ele.start;
+		element.end = ele.end;
+		element.sample = ele.sample;
+		element.matrix.refreshGuiMatrix();
+
 		// sample, etc...
 		^element
 	}
@@ -45,12 +50,9 @@ MasterSequencer{
 	addNewSequencerElement { |ele| // noteLength, bars
 		sequencerElementsLayout.add(ele);
 		sequences[ele.steps].add(ele);
-//		if(noteLength != nil){sequences[element.steps].add(element)}; /////////////////// big change!!!!!!!!!!!!!!
-		//sequences[noteLength].add(element)
 		flowLayout.nextLine;
 		[\MS, sequencerElementsLayout, sequences].postln;
 	}
-
 
 	init {
 		tempoSpec = ControlSpec(30.0, 240.0);
@@ -68,11 +70,11 @@ MasterSequencer{
 
 		sequences = ();
 		scSynthElements = ();
-		//sequences[8] = List.new;
 		sequences[16] = List.new;
 		sequences[32] = List.new;
 		sequences[64] = List.new;
 		scSynthElements[100] = List.new;
+		sequences[100] = List.new // Fake List for scSynthElements to use them like sequencerElements.
 	}
 
 	makeWindow {
@@ -113,12 +115,15 @@ MasterSequencer{
 			chosenSoundType = pop.items[pop.value];
 		});
 
-		QButton(constructor, Rect(215,5,100,20)) // New SCSynth-Button
+		QView(constructor, Rect(690,0,110,30)).background_(Color.fromHexString("D3D3D3"));
+		QView(constructor, Rect(685,0,5,30)).background_(Color.grey);
+
+		QButton(constructor, Rect(695,5,100,20)) // New SCSynth-Button
 		.states_([["SCSynth", Color.black, Color.white]])
 		.action_({
 			var s = SCSynthElement(scroll);
 			this.addNewSequencerElement(s);
-			scSynthElements.add(s);
+			// scSynthElements.add(s);
 		});
 
 		QButton(constructor, Rect(5,5,20,20))    // New SequencerElement-Button
@@ -235,14 +240,14 @@ MasterSequencer{
 			if (val.value == 1) {
 				Tdef(\mainSequencerPlayer).play;
 
-				scSynthElements.do{|syn|
+				sequences[100].do{|syn|
 					syn.buildSynth;
 					Pbind(*syn.melo).play
 				}
-
 			} {
 				Tdef(\mainSequencerPlayer).stop;
-				scSynthElements.do{|syn| Pbind(*syn).stop;}
+				sequences[100].do{|syn|
+					Pbind(*syn.melo).stop;}
 			};
 		});
 
@@ -290,7 +295,6 @@ MasterSequencer{
 				var current64 = i;
 
 				////// 16 ///////// 16 ////////// 16 /////////// 16 ////////////
-
 				sequences[16].do{ |seq|        // LED
 					var bars = seq.matrix.sequence.size / 16;
 					defer{
@@ -320,7 +324,6 @@ MasterSequencer{
 				};
 
 				////// 32 ///////// 32 //////////32 /////////// 32 ////////////
-
 				sequences[32].do{ |seq| // LED
 					defer{
 						seq.matrix.guiMatrix.flatten.wrapAt(current32).ledLightOn;
@@ -353,8 +356,8 @@ MasterSequencer{
 						};
 					};
 				};
-				////// 64 ///////// 64 ////////// 64 /////////// 64 ////////////
 
+				////// 64 ///////// 64 ////////// 64 /////////// 64 ////////////
 				sequences[64].do{ |seq|   // LED
 					defer{
 						seq.matrix.guiMatrix.flatten.wrapAt(current64).ledLightOn;
@@ -384,9 +387,7 @@ MasterSequencer{
 						//[\amp, seq.slider1, \rate, seq.slider2, \buffer, seq.sample]);
 					};
 				};
-
-				//////////////////////////////////////////
-
+				///////////////////////////////////////////////////////////////////
 				(1/16).wait;
 			};
 		};
@@ -416,7 +417,7 @@ MasterSequencer{
 
 	play {
 		Tdef(\mainSequencerPlayer).play;
-		this.inspectorTextPrint("PLAY THAT SHIIT");
+		this.inspectorTextPrint("PLAY");
 	}
 
 	stop {
