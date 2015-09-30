@@ -330,12 +330,4 @@ SCSynthElement {
 /*
 MasterSequencer.instance = nil;
 MasterSequencer();
-
-1. Ich würde gerne eine weiter section einführen, eine SuperCollider \instrument bzw ein SynthDef
-   section.Diese beinhaltet eine Textbox in die man ein \instrument einfügen kann.
-2. DuplicateSequencerElement();
-3. ledLight();
-4. ----touchSampleMode, sampleToEnd---NEIN DURATION
-5. Nur 2 Kanäle im NRT ergebnis.
-
 */

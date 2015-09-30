@@ -22,20 +22,15 @@ MasterSequencer{
 		^instance;
 	}
 
-	// duplicateSequencerElement {
-	// 	var ele = this.newSequencerElement();
-	// 	^this.addNewSequencerElement(currentElement);
-	// }
-
 	createNewSequencerElement { |steps, bars, type|
 		^SequencerElement(scroll, steps, bars, type)
 	}
 
 	duplicateSequencerElement { |ele|
 		var element = SequencerElement(scroll, ele.steps, ele.bars, ele.section);
-		// hier matrix duplizieren, etc...
+
 		element.matrix.sequence = ele.matrix.sequence;
-		element.slider1 = ele.slider1; // sliders states kopieren
+		element.slider1 = ele.slider1;
 		element.slider2 = ele.slider2;
 		element.popUp.value = ele.popUp.value;
 		element.start = ele.start;
@@ -43,7 +38,6 @@ MasterSequencer{
 		element.sample = ele.sample;
 		element.matrix.refreshGuiMatrix();
 
-		// sample, etc...
 		^element
 	}
 
@@ -117,28 +111,17 @@ MasterSequencer{
 
 		QView(constructor, Rect(690,0,110,30)).background_(Color.fromHexString("D3D3D3"));
 		QView(constructor, Rect(685,0,5,30)).background_(Color.grey);
-
 		QButton(constructor, Rect(695,5,100,20)) // New SCSynth-Button
 		.states_([["SCSynth", Color.black, Color.white]])
 		.action_({
 			var s = SCSynthElement(scroll);
 			this.addNewSequencerElement(s);
-			// scSynthElements.add(s);
 		});
 
 		QButton(constructor, Rect(5,5,20,20))    // New SequencerElement-Button
 		.states_([["+", Color.black, Color.white]])
 		.action_({
-
 			this.addNewSequencerElement(this.createNewSequencerElement(noteLength, bars, chosenSoundType));
-//			this.addNewSequencerElement(SequencerElement(scroll,noteLength,bars,chosenSoundType));
-			/*
-			var se;
-			se = SequencerElement(scroll,noteLength,bars,chosenSoundType);
-			"Gerade eben habe ich ein SequencerElement angefordert.".postln;
-			this.addNewSequencerElement(se, noteLength, bars);
-			"SequencerElement hinzugefügt".postln;
-			*/
 		});
 
 		///// MAPPING CERTAIN KEYDOWNS TO MATRIX EDITING MODES

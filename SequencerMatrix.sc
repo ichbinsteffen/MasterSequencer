@@ -106,8 +106,6 @@ SequencerMatrix {
 				guiMatrix[i][j].mouseDownAction_({
 					guiMatrix[i][j].switchValue;
 					sequence[(i*steps)+j] = guiMatrix[i][j].value.asBoolean;
-//					this.score = Score.new(sequence).values.asBinOpString;
-//					guiMatrix[i][j].value.asBoolean.postln;
 				});
 
 				guiMatrix[i][j].mouseEnterAction_({
@@ -121,18 +119,6 @@ SequencerMatrix {
 						this.setCell(i, j, 0);
 					};
 				});
-
-//				guiMatrix[i][j].keyDownAction_(
-
-//				MouseButton.mouseDown;
-				/*
-				.states_([
-					[" ", Color.black, Color.white],
-					[" ", Color.white, Color.black],
-				])
-				.action_{ |v|
-					sequence[(i*steps)+j] = v.value.booleanValue;
-				};*/
 
 			};
 		};
