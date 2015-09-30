@@ -139,15 +139,18 @@ SequencerMatrix {
 	}
 
 	refreshGuiMatrix {
-		sequence.do{|val|
-			bars.do {|i|
-				steps.do{|j|
-					if (val == 1){
-						guiMatrix[i][j].background_(Color.red);
-					};
-				};
-			};
-		};
-	}
 
+		bars.do {|i|
+			steps.do{|j|
+				if(sequence[(i*steps)+j] == true){
+					guiMatrix[i][j].turnOn;
+				}
+			}
+		}
+	}
 }
+
+/*
+MasterSequencer();
+MasterSequencer.instance = nil;
+*/ 

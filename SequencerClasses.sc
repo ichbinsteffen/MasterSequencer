@@ -117,7 +117,9 @@ SequencerElement {
 
 		QButton.new(mainView, Rect(795,((height / 2)-7),9,10))            // DELETE SEQUENCER ELEMENT BUTTON
 		.states_([["x", Color.white, (Color.clear).alpha_(0.3)]])
-		.action_({this.remove();});
+		.action_({this.remove();})
+		.mouseEnterAction_({MasterSequencer.instance.inspectorTextPrint("\nRemove this Element")})
+		.mouseLeaveAction_({this.refresh});
 
 		QButton.new(mainView, Rect(785,((height / 2)+10),15,13))          // Bounce to disk Button
 		.states_([["B", Color.white, (Color.clear).alpha_(0.1)]])
@@ -125,14 +127,17 @@ SequencerElement {
 			var binarySequence = this.matrix.sequence.collect(_.binaryValue);
 			this.bounceSequenceDialogue(binarySequence);
 			})
-		.mouseEnterAction_({MasterSequencer.instance.inspectorTextPrint("\n \n Bounce to Disk")};);
+		.mouseEnterAction_({MasterSequencer.instance.inspectorTextPrint("\nBounce to Disk")})
+		.mouseLeaveAction_({this.refresh});
 
 		QButton.new(mainView, Rect(785,((height / 2)+30),15,13))          // DUPLICATE BUTTON
 		.states_([["D", Color.white, (Color.clear).alpha_(0.1)]])
 		.action_({
 			var ms = MasterSequencer.instance;
 			ms.addNewSequencerElement(ms.duplicateSequencerElement(ms.currentElement));
-		});
+		})
+		.mouseEnterAction_({MasterSequencer.instance.inspectorTextPrint("\nDuplicate this Element")})
+		.mouseLeaveAction_({this.refresh});
 
 		matrix = SequencerMatrix(view, steps, bars);
 
