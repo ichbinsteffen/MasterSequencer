@@ -39,6 +39,9 @@ MasterSequencer{
 		element.range.hi_(ele.end);
 		element.sample = ele.sample;
 		element.matrix.refreshGuiMatrix();
+		element.volumeSlider.value = ele.volumeSlider.value;
+		element.panKnob.value = ele.panKnob.value;
+		element.rateKnob.value = ele.rateKnob.value;
 
 
 		^element
@@ -124,7 +127,12 @@ MasterSequencer{
 		QButton(constructor, Rect(5,5,20,20))    // New SequencerElement-Button
 		.states_([["+", Color.black, Color.white]])
 		.action_({
+//			var dir = this.class.filenameSymbol.asString.dirname.postln;
+//			var paths = ((dir +/+ "samples/%/*".format(chosenSoundType))).pathMatch;
+
+			// if (more than 0 samples in the section) do:
 			this.addNewSequencerElement(this.createNewSequencerElement(noteLength, bars, chosenSoundType));
+
 		});
 
 		///// MAPPING CERTAIN KEYDOWNS TO MATRIX EDITING MODES

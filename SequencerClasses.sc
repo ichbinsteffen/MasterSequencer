@@ -12,6 +12,8 @@ SequencerElement {
 	var <>id, <>original;
 	classvar <>currentID;
 
+	var <>volumeSlider, <>panKnob, <>rateKnob;
+
 	*initClass {
 		currentID = -1;
 	}
@@ -86,20 +88,22 @@ SequencerElement {
 		defaultSamp = SampleManager.getSection(section).keys.asArray.sort.first;
 		sample = SampleManager.getSample(defaultSamp.asSymbol, section);  // LOAD 1st sample per default
 
-		QSlider(mainView, Rect(190, 20, 170, 20)).action_{ |v|            // VOL SLIDER (1)
+		volumeSlider = QSlider(mainView, Rect(190, 20, 170, 20));
+		volumeSlider.action_{ |v|            // VOL SLIDER (1)
 			slider1 = specAmp.map(v.value);
 			this.refresh;
-		}.valueAction_(specAmp.unmap(1));
+		};
+		volumeSlider.valueAction_(specAmp.unmap(1));
 
 
-		QKnob(mainView, Rect(368, 20, 20, 20))                            // PAN KNOB
+		panKnob = QKnob(mainView, Rect(368, 20, 20, 20))                            // PAN KNOB
 		.action_({|v,x,y,m| pan =\pan.asSpec.map(v.value);
 		this.refresh;
 		})
 		.value_(pan = \pan.asSpec.unmap(0))
 		.centered_(true);
 
-		QKnob(mainView, Rect(368, 50, 20, 20)).action_{ |v|               // SPEED KNOB (slider 2)
+		rateKnob = QKnob(mainView, Rect(368, 50, 20, 20)).action_{ |v|               // SPEED KNOB (slider 2)
 			slider2 = specRate.map(v.value);
 			this.refresh;
 		}.valueAction_(specRate.unmap(1));
