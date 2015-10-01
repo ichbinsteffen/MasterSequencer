@@ -20,6 +20,7 @@ SampleManager {
 				// check if that file was already loaded on that section
 				samples[section][key] = samples[section][key] ?? {
 					//("Loading sample % in section %".format(key, section)).postln;
+
 					Buffer.read(Server.default, path);
 				};
 			} {

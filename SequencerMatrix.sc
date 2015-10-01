@@ -28,6 +28,7 @@ SequencerButton : QView {
 	ledLightOn {
 		this.background_(Color.green);
 	}
+
 	ledLightOff {
 		if (this.value == 1) {this.background_(Color.red)} {this.background_(Color.black)}
 	}
@@ -144,7 +145,9 @@ SequencerMatrix {
 			steps.do{|j|
 				if(sequence[(i*steps)+j] == true){
 					guiMatrix[i][j].turnOn;
-				}
+				};
+				if(sequence[(i*steps)+j] == false)
+				{guiMatrix[i][j].turnOff;};
 			}
 		}
 	}

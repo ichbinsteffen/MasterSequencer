@@ -35,8 +35,11 @@ MasterSequencer{
 		element.popUp.value = ele.popUp.value;
 		element.start = ele.start;
 		element.end = ele.end;
+		element.range.lo_(ele.start);
+		element.range.hi_(ele.end);
 		element.sample = ele.sample;
 		element.matrix.refreshGuiMatrix();
+
 
 		^element
 	}
@@ -229,10 +232,14 @@ MasterSequencer{
 				}
 			} {
 				Tdef(\mainSequencerPlayer).stop;
+
 				sequences[100].do{|syn|
-					Pbind(*syn.melo).stop;}
-			};
-		});
+					Pbind(*syn.melo).stop;
+				};
+				sequences[16].do{|seq|seq.matrix.refreshGuiMatrix;};
+				sequences[32].do{|seq|seq.matrix.refreshGuiMatrix;};
+				sequences[64].do{|seq|seq.matrix.refreshGuiMatrix;};
+		}});
 
 		bpmFader = QSlider.new(playerView, Rect(100,50,200,40))
 		.action_({|val|
