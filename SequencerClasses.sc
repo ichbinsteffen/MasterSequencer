@@ -28,9 +28,9 @@ SequencerElement {
 
 ///// SETTING THE INSTANCE VARIABLES /////
 
-		var dir = this.class.filenameSymbol.asString.dirname.postln;
+		var dir = this.class.filenameSymbol.asString.dirname;
 		var defaultSamp;
-		var ms = MasterSequencer.instance.postln;
+		var ms = MasterSequencer.instance;
 
 		this.steps = steps;
 		this.bars = bars;
@@ -75,13 +75,12 @@ SequencerElement {
 		});
 
 		popUp = QPopUpMenu(mainView, Rect(40,20,140,50));
-		popUp.items_(SampleManager.getSection(section).keys.postln.asArray.postln.sort);
+		popUp.items_(SampleManager.getSection(section).keys.postln.asArray.sort);
 		popUp.action_({|pop|
 			var aSample = SampleManager.getSample(pop.items[pop.value].asSymbol, section);
 			"setting sample for Element % % %".format(section, pop.items[pop.value], aSample).postln;
 			sample = aSample;
 			this.samplePath = sample.path;
-			this.samplePath.postln;
 			this.refresh;
 		});
 

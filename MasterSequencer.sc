@@ -43,7 +43,6 @@ MasterSequencer{
 		element.panKnob.value = ele.panKnob.value;
 		element.rateKnob.value = ele.rateKnob.value;
 
-
 		^element
 	}
 
@@ -51,7 +50,6 @@ MasterSequencer{
 		sequencerElementsLayout.add(ele);
 		sequences[ele.steps].add(ele);
 		flowLayout.nextLine;
-		[\MS, sequencerElementsLayout, sequences].postln;
 	}
 
 	init {
@@ -93,7 +91,6 @@ MasterSequencer{
 
 		flowLayout = scroll.addFlowLayout(0@0, 0@10);
 
-		// QView(window, Rect(217, 13, 800, 30)).background_((Color.gray).alpha_(0.2));
 		constructor = QView(window, Rect(220, 10, 800,30))
 		.background_(Color.fromHexString("D3D3D3")); //99CCBB
 
@@ -127,12 +124,17 @@ MasterSequencer{
 		QButton(constructor, Rect(5,5,20,20))    // New SequencerElement-Button
 		.states_([["+", Color.black, Color.white]])
 		.action_({
-//			var dir = this.class.filenameSymbol.asString.dirname.postln;
-//			var paths = ((dir +/+ "samples/%/*".format(chosenSoundType))).pathMatch;
+			var dir = this.class.filenameSymbol.asString.dirname.postln;
+			var paths = ((dir +/+ "samples/%/*".format(chosenSoundType))).pathMatch;
+			"Number of files in section: %".format(paths.size).postln;
 
-			// if (more than 0 samples in the section) do:
-			this.addNewSequencerElement(this.createNewSequencerElement(noteLength, bars, chosenSoundType));
-
+			if (paths.size > 1) {
+				this.addNewSequencerElement(this.createNewSequencerElement(noteLength, bars, chosenSoundType));
+			} {
+				"There is no file in section. Creation discarded.".postln;
+				MasterSequencer.instance.inspectorTextPrint(
+					"\n There is no file in section %. \nCreation discarded.".format(chosenSoundType).postln);
+			}
 		});
 
 		///// MAPPING CERTAIN KEYDOWNS TO MATRIX EDITING MODES
