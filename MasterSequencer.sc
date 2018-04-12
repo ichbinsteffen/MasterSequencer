@@ -11,7 +11,7 @@ MasterSequencer{
 	<>ampFader,<>bpmFader, <>playButton, <>bpmNumberBox,
 	<>globalAmp, <>globalBPM, <>sequences, <>sequencerElementsLayout, <>scSynthElements,
 	<>chosenSoundType, <>bars, <>noteLength, <>sampleArray, <>scroll, <>flowLayout,
-	<>drawing, <>toggling, <>erasing, <>tempoSpec, <>volumeSpec;
+	<>drawing, <>toggling, <>erasing, <>tempoSpec, <>volumeSpec, <>midiThingsInstance;
 
 	var <>currentElement;
 
@@ -25,6 +25,10 @@ MasterSequencer{
 	createNewSequencerElement { |steps, bars, type|
 		^SequencerElement(scroll, steps, bars, type)
 	}
+	createNewChordSequencerElement {
+		^ChordSequencerElement(scroll);
+	}
+
 
 	duplicateSequencerElement { |ele|
 		var element = SequencerElement(scroll, ele.steps, ele.bars, ele.section);
@@ -46,6 +50,12 @@ MasterSequencer{
 		^element
 	}
 
+	addNewChordSequencerElement {|ele|
+		sequencerElementsLayout.add(ele);
+		sequences[ele.steps].add(ele);
+		flowLayout.nextLine;
+	}
+
 	addNewSequencerElement { |ele| // noteLength, bars
 		sequencerElementsLayout.add(ele);
 		sequences[ele.steps].add(ele);
@@ -57,6 +67,7 @@ MasterSequencer{
 		globalBPM = 120;
 		sequencerElementsLayout = List.new;
 		volumeSpec = [Server.default.volume.min, Server.default.volume.max, \db].asSpec;
+		midiThingsInstance = MIDIthings();
 
 		this.loadSynths;
 		this.loadTask;
@@ -72,7 +83,9 @@ MasterSequencer{
 		sequences[32] = List.new;
 		sequences[64] = List.new;
 		scSynthElements[100] = List.new;
-		sequences[100] = List.new // Fake List for scSynthElements to use them like sequencerElements.
+
+		sequences[100] = List.new; // Fake List for scSynthElements to use them like sequencerElements.
+		sequences[101] = List.new; // Fake List for ChordSequencerElement to use them like ...
 	}
 
 	makeWindow {
@@ -83,33 +96,41 @@ MasterSequencer{
 		sampleArray = (MasterSequencer.class.filenameSymbol.asString.dirname +/+ "samples/*")
 		.pathMatch.collect{ |path| path.basename.asSymbol };
 
-		window = QWindow.new("App", Rect(300,300,1030,720),false)
-		.background_(Color.fromHexString("808080")); // FFDDCC
+		window = QWindow.new("App", Rect(300,300,1030,720),true)
+		.background_(Color.fromHexString("808080"));
 
-		scroll = QScrollView.new(window, Rect(210,50, 840, 550))
-		.background_(Color.fromHexString("808080")).hasBorder_(false); //FFDDCC
-
+		window.acceptsMouseOver_(true);
+		scroll = QScrollView.new(window, Rect(210,50, 820, 600))
+		.background_(Color.fromHexString("808080")).hasBorder_(false);
+		scroll.hasVerticalScroller_(true);
+		scroll.acceptsMouseOver_(true);
 		flowLayout = scroll.addFlowLayout(0@0, 0@10);
 
 		constructor = QView(window, Rect(220, 10, 800,30))
-		.background_(Color.fromHexString("D3D3D3")); //99CCBB
+		.background_(Color.fromHexString("D3D3D3"));
 
-		QStaticText(constructor, Rect(432,1,30,30)).string_("Bars"); // Bars string
+		QStaticText(constructor, Rect(432,1,30,30)).string_("Bars");  // Bars string
 
-		QPopUpMenu(constructor, Rect(390,5,40,20))                   // Bars popup-list
+		QPopUpMenu(constructor, Rect(390,5,40,20)) // Bars popup-list
 		.items_([4,8,16])
 		.action_({|pop| bars = pop.items[pop.value]; });
 
 		QStaticText(constructor, Rect(523,1,80,30)).string_("Notelength");
 
-		QPopUpMenu(constructor, Rect(470,5,50,20))
+		QPopUpMenu(constructor, Rect(470,5,50,20)) // Notelength popup-list
 		.items_([16,32,64])
 		.action_({|pop| noteLength = pop.items[pop.value]; });
 
-		QPopUpMenu(constructor, Rect(25,5,140,20))
+		QPopUpMenu(constructor, Rect(25,5,140,20)) // Sample Type popup-list
 		.items_(sampleArray)
 		.action_({|pop|
 			chosenSoundType = pop.items[pop.value];
+		});
+
+		QButton(constructor, Rect(210,5,60,20)) // Add Chord Sequencer Element
+		.states_([["Chords", Color.black, Color.white]])
+		.action_({
+			this.addNewChordSequencerElement(ChordSequencerElement(scroll, bars, midiThingsInstance));
 		});
 
 		QView(constructor, Rect(690,0,110,30)).background_(Color.fromHexString("D3D3D3"));
@@ -205,10 +226,10 @@ MasterSequencer{
 
 	makeInspector {
 
-		inspectorView = QView(window, Rect(10,10,200,590))
-		.background_(Color.fromHexString("D3D3D3")); //99CCBB
+		inspectorView = QView(window, Rect(10,10,200,640)) //  Rect(10,10,200,590)
+		.background_(Color.fromHexString("D3D3D3"));
 
-		inspectorTextView = QTextView(inspectorView, Rect(5,5,190,580))
+		inspectorTextView = QTextView(inspectorView, Rect(5,5,190,630))
 		.background_(Color.clear).editable_(true)
 		.string_("App started") ;
 	}
@@ -219,64 +240,72 @@ MasterSequencer{
 
 	makePlayer {
 
-		playerSelectorView = QView.new(window, Rect(10,600,200,10))
+		playerSelectorView = QView.new(window, Rect(10,650,200,10)) // old: Rect(10,600,200,10)
 		.background_(Color.clear);
 
-		playerView = QView.new(window, Rect(10,610,1010,100))
-		.background_(Color.fromHexString("D3D3D3")) //99CCFF
+		playerView = QView.new(window, Rect(10,660,1010,50)) // old: Rect(10,610,1010,100)
+		.background_(Color.fromHexString("D3D3D3"))
 		.mouseEnterAction_({playerSelectorView.background_(Color.fromHexString("FF7733"))})
 		.mouseLeaveAction_({playerSelectorView.background_(Color.clear)});
 
-		playButton = QButton.new(playerView, Rect(10,10,80,80))
+		playButton = QButton.new(playerView, Rect(5,5,90,40))
 		.states_([
 			["►", Color.black, Color.white],
 			["∞", Color.white, Color.black],
 		])
 		.action_({|val|
 			if (val.value == 1) {
+				Tdef(\mainSequencerPlayer).quant = 0;
 				Tdef(\mainSequencerPlayer).play;
 
 				sequences[100].do{|syn|
 					syn.buildSynth;
 					Pbind(*syn.melo).play
-				}
+				};
+
+		sequences[101].do{|seq| seq.playSequence;};
+
+
 			} {
 				Tdef(\mainSequencerPlayer).stop;
+
+				sequences[101].do{|syn| syn.stopSequence;};
 
 				sequences[100].do{|syn|
 					Pbind(*syn.melo).stop;
 				};
+
+				sequences[101].do{|seq| seq.stopSequence;};
+
 				sequences[16].do{|seq|seq.matrix.refreshGuiMatrix;};
 				sequences[32].do{|seq|seq.matrix.refreshGuiMatrix;};
 				sequences[64].do{|seq|seq.matrix.refreshGuiMatrix;};
+
 		}});
 
-		bpmFader = QSlider.new(playerView, Rect(100,50,200,40))
+		bpmFader = QSlider.new(playerView, Rect(200,9,200,32))
 		.action_({|val|
 			this.changeTempo(val.value);
 			bpmNumberBox.value_(globalBPM);
 		})
 		.value_(tempoSpec.unmap(globalBPM))
-		.background_(Color.fromHexString("99CCEE"));
+		.background_(Color.gray);
 
-		bpmNumberBox = QNumberBox.new(playerView, Rect(100,10,50,30))
+		bpmNumberBox = QNumberBox.new(playerView, Rect(145,10,50,30))
 		.action_({|val|
 			globalBPM = val.value;
 			TempoClock.tempo_(globalBPM/60);
 			bpmFader.value_(tempoSpec.unmap(globalBPM));
 		})
 		.value_(globalBPM)
-		.background_(Color.fromHexString("99CCEE"));
+		.background_(Color.gray);
 
-		QStaticText(playerView, Rect(155,10,30,30)).string_("BPM");
+		QStaticText(playerView, Rect(105,10,30,30)).string_("BPM");
 
-		ampFader = QSlider.new(playerView, Rect(975,10,25,80))
-		.action_({|val|
-			Server.default.volume_(volumeSpec.map(val.value));
-		})
+		ampFader = QKnob.new(playerView, Rect(975,10,30,30)) // old: Rect(975,10,25,80)
+		.action_({|val| Server.default.volume_(volumeSpec.map(val.value));})
 		.value_(volumeSpec.unmap(Server.default.volume.volume))
-		.background_(Color.fromHexString("99CCEE"));
-
+		.background_(Color.gray);
 	}
 
 	changeTempo { |new_tempo|
@@ -287,12 +316,13 @@ MasterSequencer{
 
 
 	loadTask {
+
 		Tdef(\mainSequencerPlayer, {
 			inf.do{ |i|
-
 				var current16 = (i/4).floor;
 				var current32 = (i/2).floor;
 				var current64 = i;
+
 
 				////// 16 ///////// 16 ////////// 16 /////////// 16 ////////////
 				sequences[16].do{ |seq|        // LED
@@ -306,7 +336,7 @@ MasterSequencer{
 				if( i % 4 == 0 ) {        // Trigger Sample
 					sequences[16].do{ |seq|
 
-						var arguments = [
+/*						var arguments = [
 							\amp, seq.slider1,
 							\rate, seq.slider2,
 							\buffer, seq.sample,
@@ -320,6 +350,23 @@ MasterSequencer{
 						if( seq.matrix.sequence.wrapAt(current16) ) {
 							Synth(synthName, arguments);
 						};
+*/
+
+//// as Event -BEGIN
+						var synthName = if(seq.sample.numChannels > 1) {\samplePlayerStereo}{\samplePlayerMono};
+						if( seq.matrix.sequence.wrapAt(current16) ) {
+							(
+							\instrument: synthName,
+							\amp: seq.slider1,
+							\rate: seq.slider2,
+							\buffer: seq.sample,
+							\pan: seq.pan.value,
+							\start: seq.start,
+							\end: seq.end,
+							).play
+						};
+//// as Event - END
+
 					};
 				};
 
@@ -434,7 +481,10 @@ MasterSequencer{
 
 }
 
+
+
 /*
 MasterSequencer.instance = nil
 MasterSequencer();
+test
 */

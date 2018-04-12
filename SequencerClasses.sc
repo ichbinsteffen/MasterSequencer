@@ -5,7 +5,7 @@ MasterSequencer();
 
 SequencerElement {
 
-	var <>view, <>selectorView, <>mainView, <>preButton, <>popUp, <>slider1, <>slider2, <>matrix, <>height, <>section;
+	var <>view, <>selectorView, <>mainView, <>preButton, <>popUp, <>slider1, <>slider2, <>matrix, <>height, <>section, <>closeButton;
 	var <>sample, <>steps, <>bars, <>samplePath, <>sequenceDuration;
 	var <>specAmp, <>specRate, <>pan, <>sustain, <>range, <>start, <>end;
 	var <>inspectorString;
@@ -107,7 +107,7 @@ SequencerElement {
 			this.refresh;
 		}.valueAction_(specRate.unmap(1));
 
-		range = QRangeSlider(mainView,Rect(190, 50, 170,20)).action_{ |v| // RANGE SLIDER
+		range = QRangeSlider(mainView,Rect(190, 50, 170,20)).action_{ |v|          // RANGE SLIDER
 			var string = "Low: \t% ; High: \t% ".format(v.lo,v.hi);
 			string.postln;
 			this.start = v.lo;
@@ -117,12 +117,18 @@ SequencerElement {
 
 		QButton.new(mainView, Rect(30,20,10,50)).action_({                // SAMPLE LISTEN BUTTON
 			sample.play;});
-
+/*
 		QButton.new(mainView, Rect(795,((height / 2)-7),9,10))            // DELETE SEQUENCER ELEMENT BUTTON
 		.states_([["x", Color.white, (Color.clear).alpha_(0.3)]])
 		.action_({this.remove();})
 		.mouseEnterAction_({MasterSequencer.instance.inspectorTextPrint("\nRemove this Element")})
 		.mouseLeaveAction_({this.refresh});
+		*/
+		closeButton = QView(mainView, Rect(800,0,10,10));
+		closeButton.background_(Color.red.alpha_(0.1));
+		closeButton.mouseEnterAction_({closeButton.background_(Color.red)});
+		closeButton.mouseLeaveAction_({closeButton.background_(Color.red.alpha_(0.1))});
+		closeButton.mouseDownAction_({this.remove;});
 
 		QButton.new(mainView, Rect(785,((height / 2)+10),15,13))          // Bounce to disk Button
 		.states_([["B", Color.white, (Color.clear).alpha_(0.1)]])
@@ -303,7 +309,9 @@ SCSynthElement {
 			mainView,Rect(30,20,330,192))
 		.background_(Color.fromHexString("DCDCDC"));
 
-		scCodeBox_syn.string_("{ | asdf | Out.ar(0, SinOsc.ar) }");
+//		scCodeBox_syn.string_("{ | asdf | Out.ar(0,EnvGen.kr(Env.perc(0.01,0.1, doneAction: 2)* SinOsc.ar) }");
+
+		scCodeBox_syn.string_("{\n | out, freq, sustain = 1, amp = 0.1 |\n\tvar s;\n\ts = SinOsc.ar(freq, 0, 0.2) * \n\tLine.kr(amp, 0, sustain, doneAction: 2);\n\tOut.ar(out, [s,s])\n}");
 
 		scCodeBox_pat = QTextView(mainView, Rect(397,20,386,192)).background_(Color.fromHexString("DCDCDC"));
 		scCodeBox_pat.string_("Pseq([0,1,2,0], inf)");
@@ -317,15 +325,16 @@ SCSynthElement {
 	}
 
 	buildSynth {
-		var s = (this.scCodeBox_syn.asString).interpret;
+		var s = (this.scCodeBox_syn.string).interpret;
 		SynthDef(this.id.asSymbol, s).add;
 
 		this.melo =
 		("[instrument:\\"++
 			this.id.asString ++",degree: "++
-			this.scCodeBox_pat ++
+			this.scCodeBox_pat.string ++
 			",amp: 0.1," ++ "]"
 		).interpret;
+		this.melo.dump;
 	}
 
 	refresh {    // REFRESHING THE INSPECTOR TEXT FOR THE ACTUAL scSynthelement
