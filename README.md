@@ -1,6 +1,10 @@
 # MasterSequencer
 SuperCollider Sequencer with GUI and Bounce
 
+![Screenshot](/misc/images/sequencer.png "A screenshot of the MasterSequencer")
+
+![Screenshot2](/misc/images/scale-pick.png "A screenshot of the scale pick window")
+
 ***Heavily under developement***
 
 # Instructions
