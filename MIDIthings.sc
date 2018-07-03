@@ -1,10 +1,6 @@
 /*
 MasterSequencer.instance = nil;
 MasterSequencer();
-MIDIthings.instance = nil;
-MIDIthings();
-
-Pattern Guide 01 Durchlesen !!!
 */
 
 MIDIthings {
@@ -34,7 +30,7 @@ MIDIthings {
     }
 
 	makeScalePickWindow {
-		var scale = "Ab";
+		var scale = "A";
 		var mode = "minor";
 		var scalePickWindow = QWindow.new("Pick a scale", Rect(50,800,180,110),false);
 
@@ -42,7 +38,7 @@ MIDIthings {
 		scalePickWindow.background_(Color.fromHexString("808080"));
 
 		QPopUpMenu(scalePickWindow, Rect(20,20,50,20))
-	.items_(["A","A♯","B","C","C♯","D","D♯","E","F","F♯","G","G♯"]) 	//.items_(["A♭","A","A♯","B♭","B","C♭","C","C♯","D♭","D","D♯","E♭","E","E♯","F♭","F","F♯","G♭","G","G♯"]) // Remove Ab
+	.items_(["A","A♯","B","C","C♯","D","D♯","E","F","F♯","G","G♯"])
 		.action_({|pop| scale = pop.items[pop.value]; });
 
 		QPopUpMenu(scalePickWindow, Rect(80,20,60,20))
@@ -179,6 +175,8 @@ ChordSequencerElement {
 
 	var <>id;
 
+	var<> group;
+
 	var  voice, chordSeq, chordPick, chordVari, noteLen, chord, vari, len, oct;
 
 	var <>pseq, <>pseqStream, <>sequenceWithSilence, <>sequenceNoSilence, <>player, <>volume, <>synth, <>synthString;
@@ -218,12 +216,19 @@ ChordSequencerElement {
 		vari = "Standart";
 		synth = \default; // just used for the initial synth declaration
 
+		this.group = Group(Server.default);
+
 		defaultSynthDefString = "// SynthDef(name, <- This can be left out in this window!\n\n{\n| out, freq, sustain = 1, amp = 0.1 |\n\t var s;\n\t s = SinOsc.ar(freq, 0, 0.2) * Line.kr(amp, 0, sustain, doneAction: 2);\n\t Out.ar(out, [s,s])\n}\n";
 		pianoSynthDefString = "// SynthDef(name, <- This can be left out in this window!\n\n{\n |freq = 261.63, vol = 1, gate = 1| \n\tvar ampls = [0.7, 0.4, 0.2, 0.1, 0.95, 0.6, 0.5, 0.65, 0, 0.1, 0.2]; \n\tvar freqs = Array.fill(ampls.size, { |i| freq * (i + 1) }); \n\tvar waves = Array.fill(ampls.size, { |i| SinOsc.ar(freqs.at(i),mul: ampls.at(i))}); \n\tvar mixedwaves = Mix.ar(waves).range(vol * -1,vol); \n\tvar env = Env.perc(0.09,4,curve: -10); \n\tvar final = mixedwaves * EnvGen.ar(env, gate, doneAction: 2); \n\tOut.ar(0, [final,final]);\n} \n";
 
 		stringSynthDefString = "{\n | out=0, freq=440, pan=0, sustain=0.5, amp=0.3 |\n\tvar pluck, period, string; \n\tpluck = PinkNoise.ar(Decay.kr(Impulse.kr(0.005), 0.05)); \n\tperiod = freq.reciprocal; \n\tstring = CombL.ar(pluck, period, period, sustain*6); \n\tstring = LeakDC.ar(LPF.ar(Pan2.ar(string, pan), 12000)) * amp; \n\tDetectSilence.ar(string, doneAction:2); \n\tOut.ar(out, string)\n}\n";
 
-		simple_1SynthDefString = "{\n | t_trig=0, freq |\n\tOut.ar(0, SinOsc.ar(freq+[0,1], 0, Decay2.kr(t_trig, 0.005, 1.0)))\n;}";
+		//simple_1SynthDefString = "{\n | t_trig=0, freq |\n\tOut.ar(0, SinOsc.ar(freq+[0,1], 0, Decay2.kr(t_trig, 0.005, 1.0)))\n;}";
+		simple_1SynthDefString = "{\n | t_trig=0, freq |\n\t
+	var sin = SinOsc.ar(freq+[0,1], 0, Decay2.kr(t_trig, 0.005, 1.0));\n\t
+	DetectSilence.ar(sin,doneAction:2);\n\t
+	Out.ar(0, [sin,sin]);\n
+};";
 
 		sequenceWithSilence = List.new;
 		sequenceNoSilence = List.new;
@@ -266,6 +271,7 @@ ChordSequencerElement {
 		QView(addChordButton, Rect(7,3,3,11)).background_(Color.black);
 		QView(addChordButton, Rect(3,7,11,3)).background_(Color.black);
 
+/*
 		playButton = QView(view, Rect(110,30,17,17));
 		playButton.background_(Color.gray.alpha_(0.1));
 		playButton.mouseEnterAction_({playButton.background_(Color.gray.alpha_(0.3))});
@@ -279,7 +285,7 @@ ChordSequencerElement {
 		stopButton.mouseLeaveAction_({stopButton.background_(Color.gray.alpha_(0.1))});
 		stopButton.mouseDownAction_({this.stopSequence;});
 		QView(stopButton, Rect(4,4,9,9)).background_(Color.black);
-
+*/
 		this.makeSynthPickWindow;
 
 		QButton(scSynthWindow, Rect(0,600,600,20)).string_("Set").action_(
@@ -300,7 +306,9 @@ ChordSequencerElement {
 		QStaticText(synthPickButton, Rect(4,3,13,13)).string_("S");
 
 		volSlider = QSlider(view, Rect(85,10,20,80)).value_(0.8);
-		volSlider.action_({|vol| volume = vol.value});
+		volSlider.action_({|vol|
+			volume = vol.value
+		});
 
 		scrollView = QScrollView(view, Rect(130,10,640, 90));
 		scrollView.background_(Color.fromHexString("CCCCCC"));
@@ -330,7 +338,7 @@ ChordSequencerElement {
 			Rect(230 + MasterSequencer.instance.window.bounds.left,200,600,620),true,true);
 		scSynthTextBox = QTextView(scSynthWindow, Rect(0,20,600,580)).string_(defaultSynthDefString);
 		scSynthPopUp = QPopUpMenu(scSynthWindow,Rect(0,0,600,20));
-		scSynthPopUp.items_(["default","piano","string","thing", "simple 1"]);
+		scSynthPopUp.items_(["default","piano","string", "simple 1"]);
 		scSynthPopUp.action_({ |pop|
 			switch(pop.items[pop.value],
 				"default",{this.scSynthTextBox.string_(defaultSynthDefString)},
@@ -350,6 +358,7 @@ ChordSequencerElement {
 	}
 // ---------------------------------------------
 	addNewChord { | scrollView, chord, vari, len, oct |
+
 		var midiNotes, chordAsInt, lenAsInt, octAsInt;
 		var c = ChordBlock.new(compositeView, chord, vari, len, oct, this);
 		allChordBlocks.add(c);
@@ -454,17 +463,28 @@ ChordSequencerElement {
 		var restOfElements = allChordBlocks[layoutIndex..];
 		var width = chord.view.bounds.width;
 
+		chord.identityHash.postln;
+		allChordBlocks.collect({|x|x.identityHash}).postln;
+
+		"Index of chord to remove: %".postf(layoutIndex);
+
+		"Step 1: Remove from sequenceNoSilence".postln;
 		sequenceNoSilence.removeAt(layoutIndex); // - hier entsteht der Fehler
+
+		"Step 2: Remove from allChordBlocks".postln;
 		allChordBlocks.removeAt(layoutIndex); // - this is where the error happens
 
 //		compositeView.layout.remove(this);
+		"Step 3: Remove from compositeView".postln;
+		// compositeView.remove(chord);
+		chord.view.remove;
+		compositeView.decorator.reset;
+		compositeView.children.do({|widget| compositeView.decorator.place(widget);});
 
-		compositeView.layout.remove(chord);
-
-		restOfElements.do{ |element|
+/*		restOfElements.do{ |element|
 			var bounds = element.view.bounds;
 			element.view.bounds = bounds.moveBy(0-width, 0);
-		};
+		};*/
 
 		chordFlowLayout.left = allChordBlocks.collect{|chord| chord.view.bounds.width}.sum;
 
@@ -472,9 +492,9 @@ ChordSequencerElement {
 	}
 // ---------------------------------------------
 	remove { |ele|
-
 		MasterSequencer.instance.removeSequencerElement(steps, this);
 	}
+
 // ---------------------------------------------
 	playSequence {
 
@@ -497,6 +517,8 @@ ChordSequencerElement {
 
 				event = sequenceWithSilence[idx].copy;
 				event[\dur] = event[\dur] - (relativeTimeInBar - mySum);
+				event[\amp] = this.volume;
+				event[\group] = this.group;
 				event;
 			}
 		);
